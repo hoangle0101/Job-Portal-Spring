@@ -1,0 +1,2 @@
+# File mẫu: Copy file này thành application-local.properties và đổi mật khẩu MySQL của bạn
+spring.datasource.password=your_password_here
