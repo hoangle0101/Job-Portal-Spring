@@ -6,6 +6,7 @@ import com.mockproject.job_portal.service.CandidateProfileService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/candidates")
@@ -27,5 +28,12 @@ public class CandidateProfileController {
     @GetMapping("/profile/{userId}")
     public ResponseEntity<ApiResponse<?>> getProfile(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success(profileService.getProfile(userId)));
+    }
+
+    // Uploads a CV file and associates its URL with the candidate profile.
+    @PostMapping("/upload-cv")
+    public ResponseEntity<ApiResponse<?>> uploadCv(@RequestParam Long userId,
+                                                    @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.success("CV uploaded", profileService.uploadCv(userId, file)));
     }
 }

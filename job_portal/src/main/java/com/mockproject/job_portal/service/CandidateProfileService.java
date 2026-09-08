@@ -11,16 +11,20 @@ import com.mockproject.job_portal.repository.CandidateProfileRepository;
 import com.mockproject.job_portal.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CandidateProfileService {
 
     private final CandidateProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
-    public CandidateProfileService(CandidateProfileRepository profileRepository, UserRepository userRepository) {
+    public CandidateProfileService(CandidateProfileRepository profileRepository, UserRepository userRepository,
+                                   FileStorageService fileStorageService) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     // Creates or updates the profile belonging to a job seeker.
@@ -43,6 +47,17 @@ public class CandidateProfileService {
         CandidateProfile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidate profile", "userId", userId));
         return CandidateProfileResponse.from(profile);
+    }
+
+    // Stores a CV in the resumes directory and updates the candidate profile URL.
+    @Transactional
+    public CandidateProfileResponse uploadCv(Long userId, MultipartFile file) {
+        User user = findCandidate(userId);
+        String fileName = fileStorageService.storeFile(file, "resumes");
+        CandidateProfile profile = profileRepository.findByUserId(userId)
+                .orElseGet(() -> CandidateProfile.builder().user(user).build());
+        profile.setResumeUrl("/api/v1/files/resumes/" + fileName);
+        return CandidateProfileResponse.from(profileRepository.save(profile));
     }
 
     // Finds a user and verifies that the profile owner has the candidate role.
