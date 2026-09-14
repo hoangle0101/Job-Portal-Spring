@@ -21,13 +21,16 @@ public class ShortlistService {
     private final JobApplicationRepository applicationRepository;
     private final ShortlistRepository shortlistRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ShortlistService(JobApplicationRepository applicationRepository,
                             ShortlistRepository shortlistRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.shortlistRepository = shortlistRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     // Shortlists an application and advances it to the SHORTLISTED status.
@@ -49,7 +52,11 @@ public class ShortlistService {
                 .recruiter(recruiter)
                 .note(request.getNote())
                 .build();
-        return ShortlistResponse.from(shortlistRepository.save(shortlist));
+        Shortlist savedShortlist = shortlistRepository.save(shortlist);
+        notificationService.create(application.getCandidate().getId(),
+            "Application shortlisted",
+            "Your application has been shortlisted by the recruiter.");
+        return ShortlistResponse.from(savedShortlist);
     }
 
     // Finds a user and verifies that the account is a recruiter.

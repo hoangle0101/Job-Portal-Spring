@@ -28,15 +28,18 @@ public class OfferService {
     private final OfferRepository offerRepository;
     private final InterviewFeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public OfferService(JobApplicationRepository applicationRepository,
                         OfferRepository offerRepository,
                         InterviewFeedbackRepository feedbackRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.offerRepository = offerRepository;
         this.feedbackRepository = feedbackRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     // Creates an offer only after a passing interview feedback is recorded.
@@ -65,7 +68,11 @@ public class OfferService {
                 .build();
         application.setStatus(ApplicationStatus.OFFERED);
         applicationRepository.save(application);
-        return OfferResponse.from(offerRepository.save(offer));
+        Offer savedOffer = offerRepository.save(offer);
+        notificationService.create(application.getCandidate().getId(),
+            "New job offer",
+            "You have received a new job offer.");
+        return OfferResponse.from(savedOffer);
     }
 
     // Finds a user and verifies that the account is a recruiter.
