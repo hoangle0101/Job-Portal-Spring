@@ -1,12 +1,14 @@
 package com.mockproject.job_portal.service;
 
 import com.mockproject.job_portal.dto.request.CreateOfferRequest;
+import com.mockproject.job_portal.dto.request.OfferResponseRequest;
 import com.mockproject.job_portal.dto.response.OfferResponse;
 import com.mockproject.job_portal.entity.JobApplication;
 import com.mockproject.job_portal.entity.Offer;
 import com.mockproject.job_portal.entity.User;
 import com.mockproject.job_portal.entity.enums.ApplicationStatus;
 import com.mockproject.job_portal.entity.enums.FeedbackResult;
+import com.mockproject.job_portal.entity.enums.OfferStatus;
 import com.mockproject.job_portal.entity.enums.Role;
 import com.mockproject.job_portal.exception.BadRequestException;
 import com.mockproject.job_portal.exception.ResourceNotFoundException;
@@ -74,5 +76,23 @@ public class OfferService {
             throw new BadRequestException("Only recruiters can send offers");
         }
         return recruiter;
+    }
+
+    // Records the candidate's acceptance or rejection of a pending offer.
+    @Transactional
+    public OfferResponse respond(Long offerId, OfferResponseRequest request) {
+        Offer offer = offerRepository.findById(offerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Offer", "id", offerId));
+        if (request.getStatus() == OfferStatus.PENDING) {
+            throw new BadRequestException("Offer response must be ACCEPTED or DECLINED");
+        }
+        if (!offer.getStatus().equals(OfferStatus.PENDING)) {
+            throw new BadRequestException("This offer has already been answered");
+        }
+        if (!offer.getApplication().getCandidate().getId().equals(request.getCandidateId())) {
+            throw new BadRequestException("Only the candidate can respond to this offer");
+        }
+        offer.setStatus(request.getStatus());
+        return OfferResponse.from(offerRepository.save(offer));
     }
 }
