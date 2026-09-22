@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Briefcase, DollarSign, ArrowRight, Building2, Star } from 'lucide-react';
+import { Search, MapPin, Briefcase, DollarSign, ArrowRight, Building2, Check, ChevronDown } from 'lucide-react';
 
 const MOCK_JOBS = [
   {
@@ -41,6 +41,32 @@ const MOCK_JOBS = [
 export default function Home() {
   const [keyword, setKeyword] = useState('');
   const [city, setCity] = useState('All');
+  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
+  const cityMenuRef = useRef(null);
+  const cityOptions = [
+    { value: 'All', label: 'Toàn quốc' },
+    { value: 'Hà Nội', label: 'Hà Nội' },
+    { value: 'Hồ Chí Minh', label: 'Hồ Chí Minh' },
+    { value: 'Đà Nẵng', label: 'Đà Nẵng' },
+  ];
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (cityMenuRef.current && !cityMenuRef.current.contains(event.target)) {
+        setIsCityMenuOpen(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setIsCityMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   const filteredJobs = MOCK_JOBS.filter(job => {
     const matchKeyword = job.title.toLowerCase().includes(keyword.toLowerCase()) || job.company.toLowerCase().includes(keyword.toLowerCase());
@@ -78,18 +104,39 @@ export default function Home() {
             
             <div style={{ height: '32px', width: '1px', background: 'var(--border)' }}></div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, padding: '0 12px' }}>
+            <div ref={cityMenuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '10px', flex: 1, padding: '0 12px' }}>
               <MapPin size={20} color="var(--text-muted)" />
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', background: 'transparent' }}
+              <button
+                type="button"
+                onClick={() => setIsCityMenuOpen((current) => !current)}
+                aria-expanded={isCityMenuOpen}
+                aria-haspopup="listbox"
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', border: 0, background: 'transparent', color: 'var(--text-primary)', fontSize: '15px', cursor: 'pointer', padding: '8px 0', textAlign: 'left' }}
               >
-                <option value="All">Toàn quốc</option>
-                <option value="Hà Nội">Hà Nội</option>
-                <option value="Hồ Chí Minh">Hồ Chí Minh</option>
-                <option value="Đà Nẵng">Đà Nẵng</option>
-              </select>
+                <span>{cityOptions.find((option) => option.value === city)?.label}</span>
+                <ChevronDown size={17} style={{ color: 'var(--text-muted)', transform: isCityMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+              </button>
+
+              {isCityMenuOpen && (
+                <div role="listbox" aria-label="Chọn khu vực" style={{ position: 'absolute', top: 'calc(100% + 10px)', left: '8px', right: '8px', padding: '6px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 20 }}>
+                  {cityOptions.map((option) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={city === option.value}
+                      key={option.value}
+                      onClick={() => {
+                        setCity(option.value);
+                        setIsCityMenuOpen(false);
+                      }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 11px', border: 0, borderRadius: '8px', background: city === option.value ? 'var(--primary-light)' : 'transparent', color: city === option.value ? 'var(--primary)' : 'var(--text-primary)', fontSize: '14px', fontWeight: city === option.value ? '700' : '500', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      {option.label}
+                      {city === option.value && <Check size={16} />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button className="btn btn-primary" style={{ padding: '14px 28px', fontSize: '15px' }}>

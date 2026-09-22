@@ -1,20 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { checkHealth } from '../services/jobPortalService';
-import { Briefcase, User, LogOut, CheckCircle, AlertCircle, PlusCircle, FileText } from 'lucide-react';
+import { Briefcase, LogOut, PlusCircle, FileText } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
-  const { user, logout, isRecruiter, isSeeker, switchRole } = useAuth();
-  const navigate = useNavigate();
-  const [beOnline, setBeOnline] = useState(false);
-
-  useEffect(() => {
-    checkHealth()
-      .then(() => setBeOnline(true))
-      .catch(() => setBeOnline(false));
-  }, []);
+  const { user, logout, isRecruiter, isSeeker } = useAuth();
 
   return (
     <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid var(--border)' }}>
@@ -25,13 +16,7 @@ export default function Navbar() {
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <Briefcase size={22} />
           </div>
-          <div>
-            <span style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>Job<span style={{ color: 'var(--primary)' }}>Portal</span></span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: beOnline ? '#10b981' : '#f59e0b' }}>
-              {beOnline ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
-              <span>Backend {beOnline ? 'Connected' : 'Offline'}</span>
-            </div>
-          </div>
+          <span style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>Job<span style={{ color: 'var(--primary)' }}>Portal</span></span>
         </Link>
 
         {/* Navigation Links */}
@@ -56,17 +41,6 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Role Switcher Badge (Rất tiện cho Demo giáo viên) */}
-              <select
-                value={user.role}
-                onChange={(e) => switchRole(e.target.value)}
-                style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontWeight: '600', background: 'var(--bg-subtle)' }}
-              >
-                <option value="JOB_SEEKER">Role: Ứng viên (Seeker)</option>
-                <option value="RECRUITER">Role: Nhà tuyển dụng</option>
-                <option value="ADMIN">Role: Admin</option>
-              </select>
-
               <NotificationBell userId={user.id} />
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600' }}>

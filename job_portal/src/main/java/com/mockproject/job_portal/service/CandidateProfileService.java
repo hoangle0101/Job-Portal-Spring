@@ -44,8 +44,19 @@ public class CandidateProfileService {
     // Returns a candidate profile without exposing the associated user's password.
     @Transactional(readOnly = true)
     public CandidateProfileResponse getProfile(Long userId) {
+        findCandidate(userId);
         CandidateProfile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Candidate profile", "userId", userId));
+            .orElse(null);
+        if (profile == null) {
+            return CandidateProfileResponse.builder()
+                .userId(userId)
+                .bio("")
+                .skills("")
+                .education("")
+                .experience("")
+                .resumeUrl("")
+                .build();
+        }
         return CandidateProfileResponse.from(profile);
     }
 
