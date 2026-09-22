@@ -10,16 +10,20 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('JOB_SEEKER');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
     try {
-      const user = await authService.login({ fullName, email, password, role });
+      const user = await authService.register({ fullName, email, password, role });
       login(user);
       navigate('/');
+    } catch (error) {
+      setErrorMsg(error.message || 'Không thể đăng ký tài khoản. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -100,6 +104,12 @@ export default function Register() {
               />
             </div>
           </div>
+
+          {errorMsg && (
+            <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
+              {errorMsg}
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
             {loading ? 'Đang xử lý...' : <>Đăng ký tài khoản <ArrowRight size={16} /></>}

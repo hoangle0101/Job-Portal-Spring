@@ -18,9 +18,17 @@ public class JobApplicationResponse {
     private String coverLetter;
     private ApplicationStatus status;
     private LocalDateTime createdAt;
+    private InterviewSlotResponse interview;
+    private OfferResponse offer;
 
     // Converts an application entity without exposing the complete candidate account.
     public static JobApplicationResponse from(JobApplication application) {
+        return from(application, null, null);
+    }
+
+    public static JobApplicationResponse from(JobApplication application,
+                                              InterviewSlotResponse interview,
+                                              OfferResponse offer) {
         return JobApplicationResponse.builder()
                 .id(application.getId())
                 .jobListingId(application.getJobListingId())
@@ -29,6 +37,8 @@ public class JobApplicationResponse {
                 .coverLetter(application.getCoverLetter())
                 .status(application.getStatus())
                 .createdAt(application.getCreatedAt())
+                .interview(interview)
+                .offer(offer)
                 .build();
     }
 }
