@@ -14,6 +14,9 @@ public class JobApplicationResponse {
     private Long id;
     private Long jobListingId;
     private Long candidateId;
+    private String candidateName;
+    private String candidateEmail;
+    private String candidatePhone;
     private String resumeUrl;
     private String coverLetter;
     private ApplicationStatus status;
@@ -32,7 +35,10 @@ public class JobApplicationResponse {
         return JobApplicationResponse.builder()
                 .id(application.getId())
                 .jobListingId(application.getJobListingId())
-                .candidateId(application.getCandidate().getId())
+                .candidateId(application.getCandidate() != null ? application.getCandidate().getId() : null)
+                .candidateName(application.getCandidate() != null ? application.getCandidate().getFullName() : null)
+                .candidateEmail(application.getCandidate() != null ? application.getCandidate().getEmail() : null)
+                .candidatePhone(application.getCandidate() != null ? application.getCandidate().getPhone() : null)
                 .resumeUrl(application.getResumeUrl())
                 .coverLetter(application.getCoverLetter())
                 .status(application.getStatus())
