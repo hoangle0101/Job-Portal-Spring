@@ -21,7 +21,7 @@ public class CandidateProfileService {
     private final FileStorageService fileStorageService;
 
     public CandidateProfileService(CandidateProfileRepository profileRepository, UserRepository userRepository,
-                                   FileStorageService fileStorageService) {
+            FileStorageService fileStorageService) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
@@ -46,16 +46,16 @@ public class CandidateProfileService {
     public CandidateProfileResponse getProfile(Long userId) {
         findCandidate(userId);
         CandidateProfile profile = profileRepository.findByUserId(userId)
-            .orElse(null);
+                .orElse(null);
         if (profile == null) {
             return CandidateProfileResponse.builder()
-                .userId(userId)
-                .bio("")
-                .skills("")
-                .education("")
-                .experience("")
-                .resumeUrl("")
-                .build();
+                    .userId(userId)
+                    .bio("")
+                    .skills("")
+                    .education("")
+                    .experience("")
+                    .resumeUrl("")
+                    .build();
         }
         return CandidateProfileResponse.from(profile);
     }
