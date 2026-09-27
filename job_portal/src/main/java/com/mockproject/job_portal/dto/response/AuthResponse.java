@@ -16,6 +16,7 @@ public class AuthResponse {
     private String phone;
     private String avatarUrl;
     private Role role;
+    private Boolean active;
     private String token;
 
     public static AuthResponse from(User user, String token) {
@@ -26,6 +27,7 @@ public class AuthResponse {
                 .phone(user.getPhone())
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
+                .active(user.getIsActive())
                 .token(token)
                 .build();
     }
