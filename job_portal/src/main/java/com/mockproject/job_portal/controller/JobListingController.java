@@ -4,9 +4,11 @@ import com.mockproject.job_portal.dto.request.CreateJobListingRequest;
 import com.mockproject.job_portal.dto.request.UpdateJobListingRequest;
 import com.mockproject.job_portal.dto.response.ApiResponse;
 import com.mockproject.job_portal.dto.response.JobListingResponse;
+import com.mockproject.job_portal.entity.User;
 import com.mockproject.job_portal.service.JobListingService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,19 +24,25 @@ public class JobListingController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<JobListingResponse>> createJob(@Valid @RequestBody CreateJobListingRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Job listing created successfully", jobListingService.createJob(request)));
+    public ResponseEntity<ApiResponse<JobListingResponse>> createJob(@AuthenticationPrincipal User currentUser,
+                                                                     @Valid @RequestBody CreateJobListingRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Đã đăng tin tuyển dụng",
+                jobListingService.createJob(currentUser.getId(), request)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<JobListingResponse>> updateJob(@PathVariable Long id, @Valid @RequestBody UpdateJobListingRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Job listing updated successfully", jobListingService.updateJob(id, request)));
+    public ResponseEntity<ApiResponse<JobListingResponse>> updateJob(@AuthenticationPrincipal User currentUser,
+                                                                     @PathVariable Long id,
+                                                                     @Valid @RequestBody UpdateJobListingRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật tin tuyển dụng",
+                jobListingService.updateJob(id, currentUser.getId(), request)));
     }
 
+    // Closes the listing (soft delete) so applications keep their history.
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> closeJob(@PathVariable Long id) {
-        jobListingService.deleteOrCloseJob(id);
-        return ResponseEntity.ok(ApiResponse.success("Job listing closed successfully", null));
+    public ResponseEntity<ApiResponse<Void>> closeJob(@AuthenticationPrincipal User currentUser, @PathVariable Long id) {
+        jobListingService.closeJob(id, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Đã đóng tin tuyển dụng", null));
     }
 
     @GetMapping
@@ -46,13 +54,14 @@ public class JobListingController {
         return ResponseEntity.ok(ApiResponse.success(jobListingService.searchJobs(keyword, industryId, jobTypeId, city)));
     }
 
+    // Listings of the logged-in recruiter (declared before /{id} for readability).
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponse<List<JobListingResponse>>> getMyJobs(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(jobListingService.getJobsByRecruiter(currentUser.getId())));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<JobListingResponse>> getJobById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(jobListingService.getJobById(id)));
-    }
-
-    @GetMapping("/recruiter/{recruiterId}")
-    public ResponseEntity<ApiResponse<List<JobListingResponse>>> getJobsByRecruiter(@PathVariable Long recruiterId) {
-        return ResponseEntity.ok(ApiResponse.success(jobListingService.getJobsByRecruiter(recruiterId)));
     }
 }

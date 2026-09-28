@@ -29,4 +29,12 @@ public interface JobListingRepository extends JpaRepository<JobListing, Long> {
                                @Param("jobTypeId") Long jobTypeId,
                                @Param("city") String city,
                                @Param("status") JobStatus status);
+
+    List<JobListing> findByCompanyIdAndStatusOrderByCreatedAtDesc(Long companyId, JobStatus status);
+
+    boolean existsByCompanyId(Long companyId);
+
+    boolean existsByIndustryId(Long industryId);
+
+    boolean existsByJobTypeId(Long jobTypeId);
 }
