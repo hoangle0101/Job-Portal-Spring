@@ -20,6 +20,8 @@ public class JobListingResponse {
     private String companyName;
     private String companyLogo;
     private String companyWebsite;
+    // City of the company's first branch, shown on job cards.
+    private String city;
     private Long jobTypeId;
     private String jobTypeName;
     private Long industryId;
@@ -37,6 +39,8 @@ public class JobListingResponse {
                 .companyName(j.getCompany() != null ? j.getCompany().getName() : null)
                 .companyLogo(j.getCompany() != null ? j.getCompany().getLogoUrl() : null)
                 .companyWebsite(j.getCompany() != null ? j.getCompany().getWebsite() : null)
+                .city(j.getCompany() != null && !j.getCompany().getLocations().isEmpty()
+                        ? j.getCompany().getLocations().get(0).getCity() : null)
                 .jobTypeId(j.getJobType() != null ? j.getJobType().getId() : null)
                 .jobTypeName(j.getJobType() != null ? j.getJobType().getName() : null)
                 .industryId(j.getIndustry() != null ? j.getIndustry().getId() : null)
