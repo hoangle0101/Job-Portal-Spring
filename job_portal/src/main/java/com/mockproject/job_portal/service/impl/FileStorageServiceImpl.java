@@ -14,7 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.*;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,14 +34,22 @@ public class FileStorageServiceImpl implements FileStorageService {
             Files.createDirectories(this.rootLocation);
             Files.createDirectories(this.rootLocation.resolve("avatars"));
             Files.createDirectories(this.rootLocation.resolve("resumes"));
+            Files.createDirectories(this.rootLocation.resolve("logos"));
         } catch (IOException e) {
             throw new RuntimeException("Could not initialize upload storage directory", e);
         }
     }
 
+    // Allowed upload folders and the file extensions accepted in each of them.
+    private static final Map<String, Set<String>> ALLOWED_EXTENSIONS = Map.of(
+            "resumes", Set.of(".pdf", ".doc", ".docx"),
+            "avatars", Set.of(".jpg", ".jpeg", ".png", ".webp"),
+            "logos", Set.of(".jpg", ".jpeg", ".png", ".webp")
+    );
+
     private void validateSubDirectory(String subDirectory) {
-        if (subDirectory == null || subDirectory.isBlank() || subDirectory.contains("..") || subDirectory.contains("/") || subDirectory.contains("\\")) {
-            throw new BadRequestException("Invalid subdirectory path: " + subDirectory);
+        if (subDirectory == null || !ALLOWED_EXTENSIONS.containsKey(subDirectory)) {
+            throw new BadRequestException("Thư mục lưu file không hợp lệ: " + subDirectory);
         }
     }
 
@@ -48,18 +58,22 @@ public class FileStorageServiceImpl implements FileStorageService {
         validateSubDirectory(subDirectory);
 
         if (file.isEmpty()) {
-            throw new BadRequestException("Cannot store an empty file");
+            throw new BadRequestException("File tải lên đang trống");
         }
 
         String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         if (originalFilename.contains("..\\") || originalFilename.contains("../")) {
-            throw new BadRequestException("Filename contains invalid path sequence: " + originalFilename);
+            throw new BadRequestException("Tên file không hợp lệ: " + originalFilename);
         }
 
         String extension = "";
         int i = originalFilename.lastIndexOf('.');
         if (i > 0) {
-            extension = originalFilename.substring(i);
+            extension = originalFilename.substring(i).toLowerCase();
+        }
+        if (!ALLOWED_EXTENSIONS.get(subDirectory).contains(extension)) {
+            throw new BadRequestException("Định dạng file không được hỗ trợ. Chấp nhận: "
+                    + String.join(", ", ALLOWED_EXTENSIONS.get(subDirectory)));
         }
 
         String uniqueFileName = UUID.randomUUID() + extension;

@@ -9,9 +9,7 @@ import lombok.Setter;
 @Setter
 public class OfferResponseRequest {
 
-    @NotNull
-    private Long candidateId;
-
-    @NotNull
+    // ACCEPTED or DECLINED
+    @NotNull(message = "Vui lòng chọn Chấp nhận hoặc Từ chối")
     private OfferStatus status;
 }

@@ -1,6 +1,7 @@
 package com.mockproject.job_portal.repository;
 
 import com.mockproject.job_portal.entity.InterviewSlot;
+import com.mockproject.job_portal.entity.enums.InterviewStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,4 +10,7 @@ public interface InterviewSlotRepository extends JpaRepository<InterviewSlot, Lo
 
     // Lists interview slots for an application from newest to oldest.
     List<InterviewSlot> findByApplicationIdOrderByStartTimeDesc(Long applicationId);
+
+    // Finds interview slots of an application with a given status (e.g. still SCHEDULED).
+    List<InterviewSlot> findByApplicationIdAndStatus(Long applicationId, InterviewStatus status);
 }

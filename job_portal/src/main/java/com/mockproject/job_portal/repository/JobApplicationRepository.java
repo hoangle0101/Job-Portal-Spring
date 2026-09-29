@@ -15,4 +15,10 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
 
     // Prevents a candidate from applying to the same job more than once.
     boolean existsByJobListingIdAndCandidateId(Long jobListingId, Long candidateId);
+
+    // Lists all applications submitted to jobs owned by a recruiter.
+    List<JobApplication> findByJobListingCompanyRecruiterIdOrderByCreatedAtDesc(Long recruiterId);
+
+    // Checks whether a recruiter has received an application from this candidate.
+    boolean existsByCandidateIdAndJobListingCompanyRecruiterId(Long candidateId, Long recruiterId);
 }

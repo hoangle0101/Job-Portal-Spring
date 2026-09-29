@@ -30,7 +30,4 @@ public class CandidateProfile extends BaseEntity {
 
     @Column(name = "resume_url")
     private String resumeUrl;
-
-    @Column(name = "avatar_url")
-    private String avatarUrl;
 }

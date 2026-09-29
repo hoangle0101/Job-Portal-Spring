@@ -11,16 +11,13 @@ import lombok.Setter;
 @Setter
 public class InterviewFeedbackRequest {
 
-    @NotNull
-    private Long interviewerId;
-
-    @NotNull
-    @Min(0)
-    @Max(100)
+    @NotNull(message = "Vui lòng nhập điểm")
+    @Min(value = 0, message = "Điểm từ 0 đến 100")
+    @Max(value = 100, message = "Điểm từ 0 đến 100")
     private Integer score;
 
     private String comments;
 
-    @NotNull
+    @NotNull(message = "Vui lòng chọn kết quả PASS hoặc FAIL")
     private FeedbackResult result;
 }
