@@ -39,26 +39,34 @@ public class NotificationService {
     // Returns a user's notifications from newest to oldest.
     @Transactional(readOnly = true)
     public List<NotificationResponse> getForUser(Long userId) {
-        findUser(userId);
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(NotificationResponse::from)
                 .collect(Collectors.toList());
     }
 
-    // Marks a notification as read only when it belongs to the requested user.
+    // Marks one notification as read only when it belongs to the logged-in user.
     @Transactional
     public NotificationResponse markAsRead(Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Thông báo", "id", notificationId));
         if (!notification.getUser().getId().equals(userId)) {
-            throw new ResourceNotFoundException("Notification", "id", notificationId);
+            throw new ResourceNotFoundException("Thông báo", "id", notificationId);
         }
         notification.setIsRead(true);
         return NotificationResponse.from(notificationRepository.save(notification));
     }
 
-    // Finds a user or raises a consistent API 404 error.
+    // Marks every unread notification of the logged-in user as read.
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (Notification notification : notifications) {
+            notification.setIsRead(true);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
     private User findUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));

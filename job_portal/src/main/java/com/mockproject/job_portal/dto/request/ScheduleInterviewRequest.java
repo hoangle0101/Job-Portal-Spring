@@ -10,16 +10,13 @@ import java.time.LocalDateTime;
 @Setter
 public class ScheduleInterviewRequest {
 
-    @NotNull
+    @NotNull(message = "Thiếu mã đơn ứng tuyển")
     private Long applicationId;
 
-    @NotNull
-    private Long recruiterId;
-
-    @NotNull
+    @NotNull(message = "Vui lòng chọn giờ bắt đầu")
     private LocalDateTime startTime;
 
-    @NotNull
+    @NotNull(message = "Vui lòng chọn giờ kết thúc")
     private LocalDateTime endTime;
 
     private String meetingLink;
