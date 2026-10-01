@@ -1,0 +1,86 @@
+/* Reset & kiểu chữ mặc định */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* Khung nội dung căn giữa */
+.container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Khoảng đệm chuẩn cho mỗi trang */
+.page {
+  padding: 32px 0 56px;
+}
+
+/* Tiện ích nhỏ */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-small {
+  font-size: 13px;
+}
+
+.text-link {
+  color: var(--color-brand);
+  font-weight: 500;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.pre-line {
+  white-space: pre-line;
+}
