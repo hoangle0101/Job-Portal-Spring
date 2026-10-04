@@ -1,0 +1,13 @@
+/*
+ * File CSS gốc, chỉ gom các file style theo thứ tự:
+ *   variables  -> màu, font, kích thước dùng chung
+ *   base       -> reset, kiểu chữ, container
+ *   components -> nút, form, bảng, nhãn, hộp thoại...
+ *   layout     -> header, footer, bố cục hai cột, trang quản lý
+ *   pages      -> phần riêng của từng trang
+ */
+@import './styles/variables.css';
+@import './styles/base.css';
+@import './styles/components.css';
+@import './styles/layout.css';
+@import './styles/pages.css';
