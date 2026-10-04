@@ -6,6 +6,7 @@ import Alert from '../components/common/Alert';
 import Loading from '../components/common/Loading';
 import EmptyState from '../components/common/EmptyState';
 import JobListItem from '../components/common/JobListItem';
+import SelectMenu from '../components/common/SelectMenu';
 
 export default function Home() {
   // Bộ lọc
@@ -23,8 +24,8 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    companyService.getIndustries().then((data) => setIndustries(data || [])).catch(() => {});
-    companyService.getJobTypes().then((data) => setJobTypes(data || [])).catch(() => {});
+    companyService.getIndustries().then((data) => setIndustries(data || [])).catch(() => { });
+    companyService.getJobTypes().then((data) => setJobTypes(data || [])).catch(() => { });
   }, []);
 
   // Gọi API tìm kiếm; backend chỉ trả về các tin đang tuyển (OPEN)
@@ -75,11 +76,12 @@ export default function Home() {
               />
             </label>
             <label className="search-field search-field-city">
-              <Icon name="location" />
-              <select value={city} onChange={(e) => setCity(e.target.value)}>
-                <option value="">Tất cả địa điểm</option>
-                {CITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <SelectMenu
+                value={city}
+                onChange={setCity}
+                options={[{ value: '', label: 'Tất cả địa điểm' }, ...CITY_OPTIONS.map((c) => ({ value: c, label: c }))]}
+                ariaLabel="Lọc việc làm theo địa điểm"
+              />
             </label>
             <button type="submit" className="btn btn-primary btn-lg">Tìm việc</button>
           </form>

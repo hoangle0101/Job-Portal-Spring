@@ -21,6 +21,7 @@ const ICON_PATHS = {
   close: <path d="M6 6l12 12M18 6 6 18" />,
   chevronLeft: <path d="m14.5 6-6 6 6 6" />,
   chevronDown: <path d="m6 9.5 6 6 6-6" />,
+  upload: <><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M5 14v5h14v-5" /></>,
   star: <path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8Z" />,
 };
 

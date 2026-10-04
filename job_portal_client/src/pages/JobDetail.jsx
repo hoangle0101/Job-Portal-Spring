@@ -43,7 +43,7 @@ export default function JobDetail() {
     if (!isSeeker) return;
     applicationService.getMyApplications()
       .then((apps) => setMyApplication((apps || []).find((a) => String(a.jobListingId) === String(id)) || null))
-      .catch(() => {});
+      .catch(() => { });
     candidateService.getMyProfile()
       .then((profile) => {
         if (profile?.resumeUrl) {
@@ -51,7 +51,7 @@ export default function JobDetail() {
           setCvMode('default');
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [id, isSeeker]);
 
   const handleApply = async (e) => {
@@ -132,7 +132,15 @@ export default function JobDetail() {
             </>
           )}
           {cvMode === 'upload' && (
-            <input type="file" accept=".pdf,.doc,.docx" className="file-input" onChange={(e) => setSelectedFile(e.target.files[0])} />
+            <label className={`cv-dropzone ${selectedFile ? 'has-file' : ''}`} htmlFor="cv-upload">
+              <span className="cv-dropzone-icon"><Icon name="upload" size={21} /></span>
+              <span className="cv-dropzone-copy">
+                <strong>{selectedFile ? selectedFile.name : 'Chọn CV để tải lên'}</strong>
+                <small>{selectedFile ? 'File đã sẵn sàng để gửi' : 'PDF, DOC hoặc DOCX · tối đa 10MB'}</small>
+              </span>
+              <span className="cv-dropzone-action">{selectedFile ? 'Đổi file' : 'Chọn file'}</span>
+              <input id="cv-upload" type="file" accept=".pdf,.doc,.docx" className="cv-input" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+            </label>
           )}
           <p className="form-hint">Định dạng PDF, DOC, DOCX, tối đa 10MB.</p>
         </div>

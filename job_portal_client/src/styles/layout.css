@@ -222,7 +222,7 @@
   color: #fff;
 }
 
-.footer-links li + li {
+.footer-links li+li {
   margin-top: 6px;
 }
 
@@ -348,12 +348,18 @@
   min-width: 200px;
 }
 
+.toolbar .select-menu {
+  flex: 0 0 200px;
+  width: 200px;
+}
+
 .toolbar-end {
   margin-left: auto;
 }
 
 /* ============ Màn hình nhỏ ============ */
 @media (max-width: 960px) {
+
   .two-column,
   .dashboard {
     grid-template-columns: 1fr;
@@ -370,6 +376,7 @@
 }
 
 @media (max-width: 720px) {
+
   /* Menu chính xuống dòng thứ hai, cuộn ngang nếu không đủ chỗ */
   .header-inner {
     flex-wrap: wrap;
