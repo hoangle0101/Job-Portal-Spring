@@ -1,23 +1,60 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fileService, applicationService } from '../services/jobPortalService';
-import { Building2, MapPin, DollarSign, Briefcase, Upload, CheckCircle2, ArrowLeft, Send } from 'lucide-react';
+import { fileService, applicationService, jobService } from '../services/jobPortalService';
+import { Building2, Globe2, Briefcase, Upload, CheckCircle2, ArrowLeft, Send, LoaderCircle, AlertCircle } from 'lucide-react';
 
 export default function JobDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  
+
+  const [job, setJob] = useState(null);
+  const [loadingJob, setLoadingJob] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [coverLetter, setCoverLetter] = useState('');
   const [uploading, setUploading] = useState(false);
   const [applied, setApplied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  useEffect(() => {
+    let active = true;
+
+    setLoadingJob(true);
+    setLoadError('');
+    jobService.getJobById(id)
+      .then((data) => {
+        if (active) setJob(data);
+      })
+      .catch((error) => {
+        if (active) setLoadError(error.message || 'Không thể tải thông tin việc làm.');
+      })
+      .finally(() => {
+        if (active) setLoadingJob(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
   const handleApply = async (e) => {
     e.preventDefault();
+
+    if (!user?.id) {
+      setErrorMsg('Vui lòng đăng nhập bằng tài khoản ứng viên trước khi nộp hồ sơ.');
+      return;
+    }
+
     if (!selectedFile) {
       setErrorMsg('Vui lòng chọn file CV (PDF, DOCX) của bạn!');
+      return;
+    }
+
+    const allowedExtensions = ['.pdf', '.docx'];
+    const fileExtension = selectedFile.name.slice(selectedFile.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+      setErrorMsg('CV chỉ được chấp nhận định dạng PDF hoặc DOCX.');
       return;
     }
 
@@ -25,25 +62,60 @@ export default function JobDetail() {
     setErrorMsg('');
 
     try {
-      // 1. Upload file CV lên Spring Boot Backend
       const uploadRes = await fileService.uploadFile(selectedFile, 'resumes');
-      const resumeUrl = uploadRes.fileUrl || uploadRes.fileName;
+      const resumeUrl = uploadRes.fileUrl || uploadRes.url || uploadRes.fileName;
 
-      // 2. Nộp đơn ứng tuyển
+      if (!resumeUrl) {
+        throw new Error('Backend không trả về đường dẫn CV sau khi upload.');
+      }
+
       await applicationService.applyJob(id, {
-        candidateId: user?.id || 1,
+        candidateId: user.id,
         resumeUrl,
         coverLetter
       });
 
       setApplied(true);
     } catch (err) {
-      // Dù backend mock hay thật, vẫn hỗ trợ hoàn tất flow demo
-      setApplied(true);
+      setErrorMsg(err.message || 'Không thể nộp hồ sơ. Vui lòng thử lại.');
     } finally {
       setUploading(false);
     }
   };
+
+  const renderDescription = (title, content) => {
+    if (!content) return null;
+
+    return (
+      <section style={{ marginTop: '28px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>{title}</h2>
+        <p style={{ color: 'var(--text-secondary)', lineHeight: '1.8', whiteSpace: 'pre-line' }}>{content}</p>
+      </section>
+    );
+  };
+
+  if (loadingJob) {
+    return (
+      <div className="container" style={{ padding: '72px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        <LoaderCircle size={28} className="spin" style={{ margin: '0 auto 12px' }} />
+        <p>Đang tải thông tin việc làm...</p>
+      </div>
+    );
+  }
+
+  if (loadError || !job) {
+    return (
+      <div className="container" style={{ padding: '72px 24px', textAlign: 'center' }}>
+        <AlertCircle size={36} color="var(--danger)" style={{ margin: '0 auto 12px' }} />
+        <h1 style={{ fontSize: '22px', marginBottom: '8px' }}>Không thể tải việc làm</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>{loadError || 'Việc làm không tồn tại.'}</p>
+        <Link to="/" className="btn btn-outline"><ArrowLeft size={16} /> Quay lại danh sách</Link>
+      </div>
+    );
+  }
+
+  const companyName = job.companyName || 'Chưa cập nhật công ty';
+  const description = job.description || {};
 
   return (
     <div className="container" style={{ padding: '40px 24px' }}>
@@ -52,35 +124,36 @@ export default function JobDetail() {
       </Link>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
-        
+
         {/* Main Content */}
         <div>
           <div className="card" style={{ marginBottom: '24px' }}>
-            <span className="badge badge-primary" style={{ marginBottom: '12px' }}>Công nghệ thông tin</span>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Senior Java Spring Boot Engineer</h1>
-            
-            <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '20px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building2 size={16} /> FPT Software</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Cầu Giấy, Hà Nội</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> 25M - 40M VNĐ</span>
+            <span className="badge badge-primary" style={{ marginBottom: '12px' }}>{job.industryName || 'Việc làm'}</span>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>{job.title}</h1>
+
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '20px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building2 size={16} /> {companyName}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Briefcase size={16} /> {job.jobTypeName || 'Chưa cập nhật hình thức'}</span>
             </div>
 
             <hr style={{ borderColor: 'var(--border)', margin: '20px 0' }} />
 
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Mô tả công việc (Job Description)</h3>
-            <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', lineHeight: '1.8', marginBottom: '24px' }}>
-              <li>Tham gia phát triển các hệ thống Backend quy mô lớn bằng Java 17, Spring Boot 4.x.</li>
-              <li>Thiết kế cơ sở dữ liệu MySQL, tối ưu câu truy vấn JPA/Hibernate.</li>
-              <li>Xây dựng RESTful APIs chuẩn quốc tế, tài liệu Swagger/OpenAPI.</li>
-              <li>Phối hợp cùng đội ngũ Frontend (React) để hoàn thiện luồng người dùng mượt mà.</li>
-            </ul>
+            {renderDescription('Mô tả công việc', description.responsibilities)}
+            {renderDescription('Yêu cầu ứng viên', description.requirements)}
+            {renderDescription('Quyền lợi', description.benefits)}
 
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Yêu cầu ứng viên</h3>
-            <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', lineHeight: '1.8' }}>
-              <li>Có từ 2+ năm kinh nghiệm làm việc với Java và Spring Boot.</li>
-              <li>Hiểu sâu về OOP, Clean Architecture, Design Patterns.</li>
-              <li>Kỹ năng Git, làm việc nhóm và giao tiếp tốt.</li>
-            </ul>
+            <section style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Thông tin công ty</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)' }}>
+                <Building2 size={18} color="var(--primary)" />
+                <strong style={{ color: 'var(--text-primary)' }}>{companyName}</strong>
+              </div>
+              {job.companyWebsite && (
+                <a href={job.companyWebsite} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', marginTop: '10px', fontSize: '14px' }}>
+                  <Globe2 size={16} /> Xem website công ty
+                </a>
+              )}
+            </section>
           </div>
         </div>
 
@@ -89,7 +162,7 @@ export default function JobDetail() {
           <div className="card" style={{ position: 'sticky', top: '96px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>Ứng tuyển ngay</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>
-              CV của bạn sẽ được gửi trực tiếp đến Nhà tuyển dụng FPT Software.
+              CV của bạn sẽ được gửi trực tiếp đến Nhà tuyển dụng {companyName}.
             </p>
 
             {applied ? (
@@ -115,7 +188,7 @@ export default function JobDetail() {
                     <Upload size={24} color="var(--primary)" style={{ margin: '0 auto 8px' }} />
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx"
+                      accept=".pdf,.docx"
                       onChange={(e) => setSelectedFile(e.target.files[0])}
                       style={{ fontSize: '13px', width: '100%' }}
                     />
