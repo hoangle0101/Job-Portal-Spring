@@ -21,13 +21,16 @@ public class InterviewSchedulingService {
     private final JobApplicationRepository applicationRepository;
     private final InterviewSlotRepository interviewSlotRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public InterviewSchedulingService(JobApplicationRepository applicationRepository,
                                       InterviewSlotRepository interviewSlotRepository,
-                                      UserRepository userRepository) {
+                                      UserRepository userRepository,
+                                      NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.interviewSlotRepository = interviewSlotRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     // Schedules an interview for a shortlisted application and updates its status.
@@ -51,7 +54,11 @@ public class InterviewSchedulingService {
                 .build();
         application.setStatus(ApplicationStatus.INTERVIEW_SCHEDULED);
         applicationRepository.save(application);
-        return InterviewSlotResponse.from(interviewSlotRepository.save(slot));
+        InterviewSlot savedSlot = interviewSlotRepository.save(slot);
+        notificationService.create(application.getCandidate().getId(),
+            "Interview scheduled",
+            "An interview has been scheduled for your application at " + savedSlot.getStartTime() + ".");
+        return InterviewSlotResponse.from(savedSlot);
     }
 
     // Finds a user and verifies that the account is a recruiter.
