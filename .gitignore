@@ -1,0 +1,26 @@
+# Root Gitignore for Mock Project (Job Portal)
+
+# Backend (Spring Boot / Gradle)
+job_portal/.gradle/
+job_portal/build/
+!job_portal/gradle/wrapper/gradle-wrapper.jar
+job_portal/out/
+job_portal/target/
+job_portal/*.env
+job_portal/application-local.properties
+job_portal/uploads/
+
+# Frontend (React / Vite)
+job_portal_client/node_modules/
+job_portal_client/dist/
+job_portal_client/.env
+job_portal_client/*.local
+
+# Common IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
