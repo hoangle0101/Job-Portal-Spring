@@ -1,6 +1,7 @@
 package com.mockproject.job_portal.controller;
 
 import com.mockproject.job_portal.dto.request.CreateOfferRequest;
+import com.mockproject.job_portal.dto.request.OfferResponseRequest;
 import com.mockproject.job_portal.dto.response.ApiResponse;
 import com.mockproject.job_portal.service.OfferService;
 import jakarta.validation.Valid;
@@ -23,5 +24,13 @@ public class OfferController {
                                                        @Valid @RequestBody CreateOfferRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Offer sent",
                 offerService.createOffer(appId, request)));
+    }
+
+    // Records the candidate's response to an offer.
+    @PutMapping("/offers/{offerId}/respond")
+    public ResponseEntity<ApiResponse<?>> respond(@PathVariable Long offerId,
+                                                   @Valid @RequestBody OfferResponseRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Offer response saved",
+                offerService.respond(offerId, request)));
     }
 }
