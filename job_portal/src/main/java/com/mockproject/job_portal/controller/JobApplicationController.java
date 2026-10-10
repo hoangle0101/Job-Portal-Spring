@@ -24,4 +24,18 @@ public class JobApplicationController {
         return ResponseEntity.ok(ApiResponse.success("Application submitted",
                 applicationService.apply(jobId, request)));
     }
+
+    // Lists the current candidate's applications and their latest statuses.
+    @GetMapping("/my-applications")
+    public ResponseEntity<ApiResponse<?>> getMyApplications(@RequestParam Long candidateId) {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getMyApplications(candidateId)));
+    }
+
+    // Lists all candidates who applied to a job for a recruiter.
+    @GetMapping("/jobs/{jobId}/applications")
+    public ResponseEntity<ApiResponse<?>> getJobApplications(@PathVariable Long jobId,
+                                                               @RequestParam Long recruiterId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.getJobApplications(jobId, recruiterId)));
+    }
 }
