@@ -1,13 +1,17 @@
 package com.mockproject.job_portal.service;
 
 import com.mockproject.job_portal.dto.request.ApplyJobRequest;
+import com.mockproject.job_portal.dto.response.InterviewSlotResponse;
 import com.mockproject.job_portal.dto.response.JobApplicationResponse;
+import com.mockproject.job_portal.dto.response.OfferResponse;
 import com.mockproject.job_portal.entity.JobApplication;
 import com.mockproject.job_portal.entity.User;
 import com.mockproject.job_portal.entity.enums.Role;
 import com.mockproject.job_portal.exception.BadRequestException;
 import com.mockproject.job_portal.exception.ResourceNotFoundException;
+import com.mockproject.job_portal.repository.InterviewSlotRepository;
 import com.mockproject.job_portal.repository.JobApplicationRepository;
+import com.mockproject.job_portal.repository.OfferRepository;
 import com.mockproject.job_portal.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +24,17 @@ public class JobApplicationService {
 
     private final JobApplicationRepository applicationRepository;
     private final UserRepository userRepository;
+    private final InterviewSlotRepository interviewSlotRepository;
+    private final OfferRepository offerRepository;
 
-    public JobApplicationService(JobApplicationRepository applicationRepository, UserRepository userRepository) {
+    public JobApplicationService(JobApplicationRepository applicationRepository,
+                                 UserRepository userRepository,
+                                 InterviewSlotRepository interviewSlotRepository,
+                                 OfferRepository offerRepository) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
+        this.interviewSlotRepository = interviewSlotRepository;
+        this.offerRepository = offerRepository;
     }
 
     // Creates an application for a job and prevents duplicate submissions.
@@ -39,7 +50,7 @@ public class JobApplicationService {
                 .resumeUrl(request.getResumeUrl())
                 .coverLetter(request.getCoverLetter())
                 .build();
-        return JobApplicationResponse.from(applicationRepository.save(application));
+        return toResponse(applicationRepository.save(application));
     }
 
     // Returns all applications owned by the requested job seeker.
@@ -48,7 +59,7 @@ public class JobApplicationService {
         findCandidate(candidateId);
         return applicationRepository.findByCandidateIdOrderByCreatedAtDesc(candidateId)
                 .stream()
-                .map(JobApplicationResponse::from)
+            .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -58,9 +69,22 @@ public class JobApplicationService {
         findRecruiter(recruiterId);
         return applicationRepository.findByJobListingIdOrderByCreatedAtDesc(jobId)
                 .stream()
-                .map(JobApplicationResponse::from)
+            .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+
+        private JobApplicationResponse toResponse(JobApplication application) {
+        InterviewSlotResponse interview = interviewSlotRepository
+            .findByApplicationIdOrderByStartTimeDesc(application.getId())
+            .stream()
+            .findFirst()
+            .map(InterviewSlotResponse::from)
+            .orElse(null);
+        OfferResponse offer = offerRepository.findByApplicationId(application.getId())
+            .map(OfferResponse::from)
+            .orElse(null);
+        return JobApplicationResponse.from(application, interview, offer);
+        }
 
     // Finds the applicant and verifies that the account is a job seeker.
     private User findCandidate(Long candidateId) {
