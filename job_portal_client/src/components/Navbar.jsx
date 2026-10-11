@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkHealth } from '../services/jobPortalService';
 import { Briefcase, User, LogOut, CheckCircle, AlertCircle, PlusCircle, FileText } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const { user, logout, isRecruiter, isSeeker, switchRole } = useAuth();
@@ -18,7 +19,7 @@ export default function Navbar() {
   return (
     <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid var(--border)' }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '72px' }}>
-        
+
         {/* Logo */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
@@ -37,7 +38,7 @@ export default function Navbar() {
         <nav style={{ display: 'flex', alignItems: 'center', gap: '28px', fontSize: '14px', fontWeight: '600' }}>
           <Link to="/" style={{ color: 'var(--text-secondary)' }}>Tìm việc làm</Link>
           <Link to="/companies" style={{ color: 'var(--text-secondary)' }}>Công ty</Link>
-          
+
           {isRecruiter && (
             <Link to="/recruiter/dashboard" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <PlusCircle size={16} /> Tuyển dụng & Đăng tin
@@ -65,6 +66,8 @@ export default function Navbar() {
                 <option value="RECRUITER">Role: Nhà tuyển dụng</option>
                 <option value="ADMIN">Role: Admin</option>
               </select>
+
+              <NotificationBell userId={user.id} />
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600' }}>
                 <span className="badge badge-primary">{user.fullName || user.email}</span>
