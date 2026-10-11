@@ -11,7 +11,7 @@ const api = axios.create({
 // Request Interceptor (Gắn token nếu có)
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const user = JSON.parse(localStorage.getItem('job_portal_user') || localStorage.getItem('user') || 'null');
     if (user && user.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
     }

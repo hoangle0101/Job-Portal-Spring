@@ -2,23 +2,27 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/jobPortalService';
-import { Briefcase, Lock, Mail, ArrowRight } from 'lucide-react';
+import { Briefcase, Lock, Mail, ArrowRight, AlertCircle, LoaderCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('JOB_SEEKER');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
     try {
       const user = await authService.login({ email, password, role });
       login(user);
       navigate(user.role === 'RECRUITER' ? '/recruiter/dashboard' : '/');
+    } catch (err) {
+      setErrorMsg(err.message || 'Email hoặc mật khẩu không chính xác.');
     } finally {
       setLoading(false);
     }
@@ -34,6 +38,13 @@ export default function Login() {
           <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Đăng nhập JobPortal</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Chào mừng bạn quay trở lại với hệ thống</p>
         </div>
+
+        {errorMsg && (
+          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={16} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
@@ -80,7 +91,7 @@ export default function Login() {
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            {loading ? 'Đang xác thực...' : <>Đăng nhập <ArrowRight size={16} /></>}
+            {loading ? <><LoaderCircle size={16} className="spin" /> Đang xác thực...</> : <>Đăng nhập <ArrowRight size={16} /></>}
           </button>
         </form>
 
