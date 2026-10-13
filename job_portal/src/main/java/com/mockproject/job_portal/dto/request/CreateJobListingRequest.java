@@ -9,24 +9,21 @@ import lombok.Setter;
 @Setter
 public class CreateJobListingRequest {
 
-    @NotNull(message = "Recruiter ID is required")
-    private Long recruiterId;
-
-    @NotNull(message = "Company ID is required")
+    @NotNull(message = "Vui lòng chọn công ty")
     private Long companyId;
 
     private Long industryId;
     private Long jobTypeId;
 
-    @NotBlank(message = "Job title is required")
+    @NotBlank(message = "Tiêu đề công việc là bắt buộc")
     private String title;
 
     private String salaryRange;
 
-    @NotBlank(message = "Responsibilities are required")
+    @NotBlank(message = "Mô tả công việc là bắt buộc")
     private String responsibilities;
 
-    @NotBlank(message = "Requirements are required")
+    @NotBlank(message = "Yêu cầu ứng viên là bắt buộc")
     private String requirements;
 
     private String benefits;

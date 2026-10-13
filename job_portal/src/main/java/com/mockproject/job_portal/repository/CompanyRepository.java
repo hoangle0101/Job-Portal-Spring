@@ -19,4 +19,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
            "WHERE (:keyword IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:city IS NULL OR LOWER(loc.city) LIKE LOWER(CONCAT('%', :city, '%')))")
     List<Company> searchCompanies(@Param("keyword") String keyword, @Param("city") String city);
+
+    // Used when renaming a company: is the new name taken by another company?
+    boolean existsByNameAndIdNot(String name, Long id);
 }

@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CompanyLocationRequest {
-    @NotBlank(message = "Address is required")
+    @NotBlank(message = "Địa chỉ là bắt buộc")
     private String address;
 
-    @NotBlank(message = "City is required")
+    @NotBlank(message = "Thành phố là bắt buộc")
     private String city;
 
     private String country = "Việt Nam";
