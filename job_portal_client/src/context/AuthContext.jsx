@@ -1,33 +1,37 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
+import { STORAGE_KEY } from '../services/api';
 
 const AuthContext = createContext();
 
+// Lưu người dùng đăng nhập (kèm JWT token) trong state + localStorage để giữ phiên khi tải lại trang
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('job_portal_user');
+      const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
 
+  // userData = response của /auth/login hoặc /auth/register (có token)
   const login = (userData) => {
     setUser(userData);
-    localStorage.setItem('job_portal_user', JSON.stringify(userData));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('job_portal_user');
+    localStorage.removeItem(STORAGE_KEY);
   };
 
-  // Hàm chuyển Role nhanh cho mục đích DEMO đồ án
-  const switchRole = (role) => {
-    if (!user) return;
-    const updated = { ...user, role };
-    setUser(updated);
-    localStorage.setItem('job_portal_user', JSON.stringify(updated));
+  // Cập nhật thông tin hiển thị (tên, SĐT, avatar) nhưng giữ nguyên token
+  const updateUser = (changes) => {
+    setUser((current) => {
+      const updated = { ...current, ...changes, token: current?.token };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -36,11 +40,11 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
-        switchRole,
+        updateUser,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'ADMIN',
         isRecruiter: user?.role === 'RECRUITER',
-        isSeeker: user?.role === 'JOB_SEEKER' || !user?.role,
+        isSeeker: user?.role === 'JOB_SEEKER',
       }}
     >
       {children}
