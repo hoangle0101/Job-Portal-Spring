@@ -1,27 +1,32 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/jobPortalService';
-import { Briefcase, Lock, Mail, User, ArrowRight } from 'lucide-react';
+import Alert from '../components/common/Alert';
+
+// Hai loại tài khoản được tự đăng ký (ADMIN do hệ thống tạo)
+const ROLE_CHOICES = [
+  { value: 'JOB_SEEKER', title: 'Tôi là ứng viên', text: 'Tìm việc, nộp CV và theo dõi tiến trình ứng tuyển.' },
+  { value: 'RECRUITER', title: 'Tôi là nhà tuyển dụng', text: 'Tạo trang công ty, đăng tin và quản lý ứng viên.' },
+];
 
 export default function Register() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('JOB_SEEKER');
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', role: 'JOB_SEEKER' });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const updateField = (field, value) => setForm({ ...form, [field]: value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     try {
-      const user = await authService.register({ fullName, email, password, role });
+      const user = await authService.register(form);
       login(user);
-      navigate('/');
+      navigate(user.role === 'RECRUITER' ? '/recruiter/dashboard' : '/');
     } catch (error) {
       setErrorMsg(error.message || 'Không thể đăng ký tài khoản. Vui lòng thử lại.');
     } finally {
@@ -30,94 +35,55 @@ export default function Register() {
   };
 
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px' }}>
-      <div className="card" style={{ maxWidth: '460px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Tạo tài khoản mới</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Bắt đầu hành trình tìm kiếm việc làm hoặc tuyển dụng</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-card auth-card-wide">
+        <h1 className="auth-title">Tạo tài khoản</h1>
+        <p className="auth-subtitle">Miễn phí, chỉ mất chưa đến một phút.</p>
+
+        <Alert message={errorMsg ? { type: 'error', text: errorMsg } : null} />
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Tôi muốn đăng ký làm:</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setRole('JOB_SEEKER')}
-                className={`btn ${role === 'JOB_SEEKER' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '13px', padding: '10px' }}
-              >
-                Ứng viên tìm việc
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('RECRUITER')}
-                className={`btn ${role === 'RECRUITER' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '13px', padding: '10px' }}
-              >
-                Nhà tuyển dụng
-              </button>
-            </div>
+          <div className="role-choices">
+            {ROLE_CHOICES.map((choice) => (
+              <label key={choice.value} className={`role-choice ${form.role === choice.value ? 'selected' : ''}`}>
+                <input type="radio" name="role" value={choice.value} checked={form.role === choice.value}
+                  onChange={() => updateField('role', choice.value)} />
+                <span className="role-choice-title">{choice.title}</span>
+                <span className="role-choice-text">{choice.text}</span>
+              </label>
+            ))}
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Họ và tên:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-              <User size={18} color="var(--text-muted)" />
-              <input
-                type="text"
-                required
-                placeholder="Nguyễn Văn A"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}
-              />
+          <div className="form-group">
+            <label className="form-label" htmlFor="fullName">Họ và tên <span className="required">*</span></label>
+            <input id="fullName" className="form-input" required placeholder="Nguyễn Văn A"
+              value={form.fullName} onChange={(e) => updateField('fullName', e.target.value)} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="email">Email <span className="required">*</span></label>
+              <input id="email" type="email" className="form-input" required placeholder="ten@email.com"
+                value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="phone">Số điện thoại</label>
+              <input id="phone" type="tel" className="form-input" placeholder="0912 345 678"
+                value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
             </div>
           </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Email:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-              <Mail size={18} color="var(--text-muted)" />
-              <input
-                type="email"
-                required
-                placeholder="vidu@fpt.edu.vn"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">Mật khẩu <span className="required">*</span></label>
+            <input id="password" type="password" className="form-input" required minLength={6} placeholder="Tối thiểu 6 ký tự"
+              value={form.password} onChange={(e) => updateField('password', e.target.value)} />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Mật khẩu:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-              <Lock size={18} color="var(--text-muted)" />
-              <input
-                type="password"
-                required
-                placeholder="Tối thiểu 6 ký tự"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}
-              />
-            </div>
-          </div>
-
-          {errorMsg && (
-            <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
-              {errorMsg}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            {loading ? 'Đang xử lý...' : <>Đăng ký tài khoản <ArrowRight size={16} /></>}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block btn-lg">
+            {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--text-muted)' }}>
-          Đã có tài khoản? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>Đăng nhập</Link>
+        <p className="auth-footer">
+          Đã có tài khoản? <Link to="/login" className="text-link">Đăng nhập</Link>
         </p>
       </div>
     </div>

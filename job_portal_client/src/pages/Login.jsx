@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/jobPortalService';
-import { Briefcase, Lock, Mail, ArrowRight, AlertCircle, LoaderCircle } from 'lucide-react';
+import Alert from '../components/common/Alert';
+
+// Trang mặc định sau khi đăng nhập, theo vai trò
+const HOME_BY_ROLE = {
+  RECRUITER: '/recruiter/dashboard',
+  ADMIN: '/admin',
+  JOB_SEEKER: '/',
+};
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('JOB_SEEKER');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const { login } = useAuth();
@@ -18,9 +24,10 @@ export default function Login() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const user = await authService.login({ email, password, role });
+      // Vai trò do backend trả về theo tài khoản, không do người dùng chọn
+      const user = await authService.login({ email, password });
       login(user);
-      navigate(user.role === 'RECRUITER' ? '/recruiter/dashboard' : '/');
+      navigate(HOME_BY_ROLE[user.role] || '/');
     } catch (err) {
       setErrorMsg(err.message || 'Email hoặc mật khẩu không chính xác.');
     } finally {
@@ -29,74 +36,31 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px' }}>
-      <div className="card" style={{ maxWidth: '440px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: '12px' }}>
-            <Briefcase size={26} />
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Đăng nhập JobPortal</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Chào mừng bạn quay trở lại với hệ thống</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">Đăng nhập</h1>
+        <p className="auth-subtitle">Chào mừng bạn quay trở lại JobPortal.</p>
 
-        {errorMsg && (
-          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={16} />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        <Alert message={errorMsg ? { type: 'error', text: errorMsg } : null} />
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Vai trò của bạn:</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-subtle)' }}
-            >
-              <option value="JOB_SEEKER">Ứng viên tìm việc (Job Seeker)</option>
-              <option value="RECRUITER">Nhà tuyển dụng (Recruiter)</option>
-              <option value="ADMIN">Quản trị viên (Admin)</option>
-            </select>
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">Email</label>
+            <input id="email" type="email" className="form-input" required placeholder="ten@email.com"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Email đăng nhập:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-              <Mail size={18} color="var(--text-muted)" />
-              <input
-                type="email"
-                required
-                placeholder="vidu@fpt.edu.vn"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">Mật khẩu</label>
+            <input id="password" type="password" className="form-input" required placeholder="Nhập mật khẩu"
+              value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Mật khẩu:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-              <Lock size={18} color="var(--text-muted)" />
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}
-              />
-            </div>
-          </div>
-
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            {loading ? <><LoaderCircle size={16} className="spin" /> Đang xác thực...</> : <>Đăng nhập <ArrowRight size={16} /></>}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block btn-lg">
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--text-muted)' }}>
-          Chưa có tài khoản? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '600' }}>Đăng ký ngay</Link>
+        <p className="auth-footer">
+          Chưa có tài khoản? <Link to="/register" className="text-link">Đăng ký ngay</Link>
         </p>
       </div>
     </div>

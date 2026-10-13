@@ -1,225 +1,257 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fileService, applicationService, jobService } from '../services/jobPortalService';
-import { Building2, Globe2, Briefcase, Upload, CheckCircle2, ArrowLeft, Send, LoaderCircle, AlertCircle } from 'lucide-react';
+import { fileService, applicationService, jobService, candidateService } from '../services/jobPortalService';
+import { fileUrl, formatDate } from '../utils/format';
+import Icon from '../components/common/Icon';
+import Alert from '../components/common/Alert';
+import Loading from '../components/common/Loading';
+import EmptyState from '../components/common/EmptyState';
+import CompanyLogo from '../components/common/CompanyLogo';
+import StatusBadge from '../components/common/StatusBadge';
+
+const ALLOWED_CV_EXTENSIONS = ['.pdf', '.doc', '.docx'];
 
 export default function JobDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isSeeker } = useAuth();
 
   const [job, setJob] = useState(null);
   const [loadingJob, setLoadingJob] = useState(true);
   const [loadError, setLoadError] = useState('');
+
+  // Dữ liệu riêng của ứng viên: đơn đã nộp vào tin này + CV mặc định trong hồ sơ
+  const [myApplication, setMyApplication] = useState(null);
+  const [defaultCv, setDefaultCv] = useState('');
+
+  const [cvMode, setCvMode] = useState('upload'); // 'default' | 'upload'
   const [selectedFile, setSelectedFile] = useState(null);
   const [coverLetter, setCoverLetter] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [applied, setApplied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    let active = true;
-
     setLoadingJob(true);
     setLoadError('');
     jobService.getJobById(id)
-      .then((data) => {
-        if (active) setJob(data);
-      })
-      .catch((error) => {
-        if (active) setLoadError(error.message || 'Không thể tải thông tin việc làm.');
-      })
-      .finally(() => {
-        if (active) setLoadingJob(false);
-      });
-
-    return () => {
-      active = false;
-    };
+      .then(setJob)
+      .catch((error) => setLoadError(error.message))
+      .finally(() => setLoadingJob(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!isSeeker) return;
+    applicationService.getMyApplications()
+      .then((apps) => setMyApplication((apps || []).find((a) => String(a.jobListingId) === String(id)) || null))
+      .catch(() => {});
+    candidateService.getMyProfile()
+      .then((profile) => {
+        if (profile?.resumeUrl) {
+          setDefaultCv(profile.resumeUrl);
+          setCvMode('default');
+        }
+      })
+      .catch(() => {});
+  }, [id, isSeeker]);
 
   const handleApply = async (e) => {
     e.preventDefault();
-
-    if (!user?.id) {
-      setErrorMsg('Vui lòng đăng nhập bằng tài khoản ứng viên trước khi nộp hồ sơ.');
-      return;
-    }
-
-    if (!selectedFile) {
-      setErrorMsg('Vui lòng chọn file CV (PDF, DOCX) của bạn!');
-      return;
-    }
-
-    const allowedExtensions = ['.pdf', '.docx'];
-    const fileExtension = selectedFile.name.slice(selectedFile.name.lastIndexOf('.')).toLowerCase();
-    if (!allowedExtensions.includes(fileExtension)) {
-      setErrorMsg('CV chỉ được chấp nhận định dạng PDF hoặc DOCX.');
-      return;
-    }
-
-    setUploading(true);
     setErrorMsg('');
 
-    try {
-      const uploadRes = await fileService.uploadFile(selectedFile, 'resumes');
-      const resumeUrl = uploadRes.fileUrl || uploadRes.url || uploadRes.fileName;
-
-      if (!resumeUrl) {
-        throw new Error('Backend không trả về đường dẫn CV sau khi upload.');
+    if (cvMode === 'upload') {
+      if (!selectedFile) {
+        setErrorMsg('Vui lòng chọn file CV (PDF, DOC, DOCX).');
+        return;
       }
+      const extension = selectedFile.name.slice(selectedFile.name.lastIndexOf('.')).toLowerCase();
+      if (!ALLOWED_CV_EXTENSIONS.includes(extension)) {
+        setErrorMsg('CV chỉ chấp nhận định dạng PDF, DOC hoặc DOCX.');
+        return;
+      }
+    }
 
-      await applicationService.applyJob(id, {
-        candidateId: user.id,
-        resumeUrl,
-        coverLetter
-      });
-
-      setApplied(true);
+    setSubmitting(true);
+    try {
+      // Bước 1: upload file CV (nếu chọn CV mới) -> nhận về đường dẫn file
+      let resumeUrl = '';
+      if (cvMode === 'upload') {
+        const uploaded = await fileService.uploadFile(selectedFile, 'resumes');
+        resumeUrl = uploaded.fileUrl;
+      }
+      // Bước 2: nộp đơn (resumeUrl rỗng = backend dùng CV mặc định trong hồ sơ)
+      setMyApplication(await applicationService.applyJob(id, { resumeUrl, coverLetter }));
     } catch (err) {
-      setErrorMsg(err.message || 'Không thể nộp hồ sơ. Vui lòng thử lại.');
+      setErrorMsg(err.message);
     } finally {
-      setUploading(false);
+      setSubmitting(false);
     }
   };
 
-  const renderDescription = (title, content) => {
-    if (!content) return null;
+  // Nội dung khung "Ứng tuyển" tùy theo vai trò và trạng thái
+  const renderApplyPanel = () => {
+    if (myApplication) {
+      return (
+        <>
+          <p className="apply-done">Bạn đã ứng tuyển vị trí này.</p>
+          <p className="text-small text-secondary">Trạng thái hiện tại: <StatusBadge status={myApplication.status} /></p>
+          <Link to="/my-applications" className="btn btn-secondary btn-block apply-panel-action">Theo dõi đơn ứng tuyển</Link>
+        </>
+      );
+    }
+    if (job.status !== 'OPEN') {
+      return <Alert message={{ type: 'info', text: 'Tin tuyển dụng đã đóng, không nhận thêm hồ sơ.' }} />;
+    }
+    if (!user) {
+      return (
+        <>
+          <p className="text-small text-secondary">Đăng nhập bằng tài khoản ứng viên để nộp hồ sơ.</p>
+          <Link to="/login" className="btn btn-primary btn-block apply-panel-action">Đăng nhập để ứng tuyển</Link>
+        </>
+      );
+    }
+    if (!isSeeker) {
+      return <p className="text-small text-secondary">Chỉ tài khoản ứng viên mới có thể nộp hồ sơ.</p>;
+    }
 
     return (
-      <section style={{ marginTop: '28px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>{title}</h2>
-        <p style={{ color: 'var(--text-secondary)', lineHeight: '1.8', whiteSpace: 'pre-line' }}>{content}</p>
-      </section>
+      <form onSubmit={handleApply}>
+        <Alert message={errorMsg ? { type: 'error', text: errorMsg } : null} />
+
+        <div className="form-group">
+          <span className="form-label">CV ứng tuyển</span>
+          {defaultCv && (
+            <>
+              <label className="radio-option">
+                <input type="radio" name="cvMode" checked={cvMode === 'default'} onChange={() => setCvMode('default')} />
+                <span>CV trong hồ sơ (<a href={fileUrl(defaultCv)} target="_blank" rel="noreferrer" className="text-link">xem</a>)</span>
+              </label>
+              <label className="radio-option">
+                <input type="radio" name="cvMode" checked={cvMode === 'upload'} onChange={() => setCvMode('upload')} />
+                Tải lên CV khác
+              </label>
+            </>
+          )}
+          {cvMode === 'upload' && (
+            <input type="file" accept=".pdf,.doc,.docx" className="file-input" onChange={(e) => setSelectedFile(e.target.files[0])} />
+          )}
+          <p className="form-hint">Định dạng PDF, DOC, DOCX, tối đa 10MB.</p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="coverLetter">Thư giới thiệu</label>
+          <textarea
+            id="coverLetter"
+            rows={5}
+            className="form-input"
+            placeholder="Vài dòng giới thiệu vì sao bạn phù hợp với vị trí này"
+            value={coverLetter}
+            onChange={(e) => setCoverLetter(e.target.value)}
+          />
+        </div>
+
+        <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg">
+          {submitting ? 'Đang gửi hồ sơ...' : 'Nộp hồ sơ ứng tuyển'}
+        </button>
+      </form>
     );
   };
 
   if (loadingJob) {
-    return (
-      <div className="container" style={{ padding: '72px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <LoaderCircle size={28} className="spin" style={{ margin: '0 auto 12px' }} />
-        <p>Đang tải thông tin việc làm...</p>
-      </div>
-    );
+    return <Loading text="Đang tải thông tin việc làm..." />;
   }
 
   if (loadError || !job) {
     return (
-      <div className="container" style={{ padding: '72px 24px', textAlign: 'center' }}>
-        <AlertCircle size={36} color="var(--danger)" style={{ margin: '0 auto 12px' }} />
-        <h1 style={{ fontSize: '22px', marginBottom: '8px' }}>Không thể tải việc làm</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>{loadError || 'Việc làm không tồn tại.'}</p>
-        <Link to="/" className="btn btn-outline"><ArrowLeft size={16} /> Quay lại danh sách</Link>
+      <div className="page">
+        <div className="container">
+          <EmptyState
+            title="Không thể tải việc làm"
+            text={loadError || 'Việc làm không tồn tại.'}
+            action={<Link to="/" className="btn btn-secondary">Quay lại danh sách việc làm</Link>}
+          />
+        </div>
       </div>
     );
   }
 
-  const companyName = job.companyName || 'Chưa cập nhật công ty';
   const description = job.description || {};
+  const sections = [
+    ['Mô tả công việc', description.responsibilities],
+    ['Yêu cầu ứng viên', description.requirements],
+    ['Quyền lợi', description.benefits],
+  ];
 
   return (
-    <div className="container" style={{ padding: '40px 24px' }}>
-      <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px', fontWeight: '600' }}>
-        <ArrowLeft size={16} /> Quay lại danh sách việc làm
-      </Link>
+    <div className="page">
+      <div className="container">
+        <Link to="/" className="back-link"><Icon name="chevronLeft" size={16} /> Danh sách việc làm</Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
-
-        {/* Main Content */}
-        <div>
-          <div className="card" style={{ marginBottom: '24px' }}>
-            <span className="badge badge-primary" style={{ marginBottom: '12px' }}>{job.industryName || 'Việc làm'}</span>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>{job.title}</h1>
-
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '20px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building2 size={16} /> {companyName}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Briefcase size={16} /> {job.jobTypeName || 'Chưa cập nhật hình thức'}</span>
-            </div>
-
-            <hr style={{ borderColor: 'var(--border)', margin: '20px 0' }} />
-
-            {renderDescription('Mô tả công việc', description.responsibilities)}
-            {renderDescription('Yêu cầu ứng viên', description.requirements)}
-            {renderDescription('Quyền lợi', description.benefits)}
-
-            <section style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Thông tin công ty</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)' }}>
-                <Building2 size={18} color="var(--primary)" />
-                <strong style={{ color: 'var(--text-primary)' }}>{companyName}</strong>
+        <div className="two-column">
+          <div>
+            {/* Tiêu đề & thông tin chính */}
+            <section className="card job-header">
+              <div className="job-header-top">
+                <CompanyLogo name={job.companyName} logoUrl={job.companyLogo} size={72} />
+                <div>
+                  <h1 className="job-header-title">{job.title}</h1>
+                  <Link to={`/companies/${job.companyId}`} className="job-header-company">{job.companyName}</Link>
+                  {job.status !== 'OPEN' && <span className="badge badge-red job-header-closed">Đã đóng</span>}
+                </div>
               </div>
-              {job.companyWebsite && (
-                <a href={job.companyWebsite} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', marginTop: '10px', fontSize: '14px' }}>
-                  <Globe2 size={16} /> Xem website công ty
-                </a>
+
+              <dl className="job-facts">
+                <div>
+                  <dt>Mức lương</dt>
+                  <dd className="job-salary">{job.salaryRange || 'Thỏa thuận'}</dd>
+                </div>
+                <div>
+                  <dt>Địa điểm</dt>
+                  <dd>{job.city || 'Chưa cập nhật'}</dd>
+                </div>
+                <div>
+                  <dt>Hình thức</dt>
+                  <dd>{job.jobTypeName || 'Chưa cập nhật'}</dd>
+                </div>
+                <div>
+                  <dt>Ngày đăng</dt>
+                  <dd>{formatDate(job.createdAt)}</dd>
+                </div>
+              </dl>
+            </section>
+
+            {/* Nội dung tin tuyển dụng */}
+            <section className="card">
+              {sections.filter(([, content]) => content).map(([title, content]) => (
+                <div key={title} className="job-section">
+                  <h2 className="job-section-title">{title}</h2>
+                  <p className="pre-line text-secondary">{content}</p>
+                </div>
+              ))}
+              {job.industryName && (
+                <div className="job-section">
+                  <h2 className="job-section-title">Ngành nghề</h2>
+                  <span className="tag">{job.industryName}</span>
+                </div>
               )}
             </section>
           </div>
+
+          <aside className="sidebar-sticky">
+            <section className="card">
+              <h2 className="card-title">Ứng tuyển</h2>
+              {renderApplyPanel()}
+            </section>
+
+            <section className="card">
+              <h2 className="card-title">Về công ty</h2>
+              <p className="company-mini-name">{job.companyName}</p>
+              {job.companyWebsite && (
+                <a href={job.companyWebsite} target="_blank" rel="noreferrer" className="text-link text-small">{job.companyWebsite}</a>
+              )}
+              <Link to={`/companies/${job.companyId}`} className="btn btn-secondary btn-block apply-panel-action">Xem trang công ty</Link>
+            </section>
+          </aside>
         </div>
-
-        {/* Sidebar Apply Form */}
-        <div>
-          <div className="card" style={{ position: 'sticky', top: '96px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>Ứng tuyển ngay</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>
-              CV của bạn sẽ được gửi trực tiếp đến Nhà tuyển dụng {companyName}.
-            </p>
-
-            {applied ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <CheckCircle2 size={48} color="#10b981" style={{ margin: '0 auto 12px' }} />
-                <h4 style={{ fontWeight: '700', color: '#065f46' }}>Nộp hồ sơ thành công!</h4>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                  Hồ sơ kèm CV đã được lưu vào hệ thống. Nhà tuyển dụng sẽ xem xét và gửi lịch phỏng vấn sớm nhất.
-                </p>
-                <Link to="/" className="btn btn-primary" style={{ marginTop: '16px', width: '100%' }}>Tiếp tục tìm việc</Link>
-              </div>
-            ) : (
-              <form onSubmit={handleApply}>
-                {errorMsg && (
-                  <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
-                    {errorMsg}
-                  </div>
-                )}
-
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Tải lên CV của bạn (.pdf, .docx):</label>
-                  <div style={{ border: '2px dashed var(--border)', borderRadius: '10px', padding: '16px', textAlign: 'center', background: 'var(--bg-subtle)', cursor: 'pointer' }}>
-                    <Upload size={24} color="var(--primary)" style={{ margin: '0 auto 8px' }} />
-                    <input
-                      type="file"
-                      accept=".pdf,.docx"
-                      onChange={(e) => setSelectedFile(e.target.files[0])}
-                      style={{ fontSize: '13px', width: '100%' }}
-                    />
-                  </div>
-                  {selectedFile && <div style={{ fontSize: '12px', color: 'var(--primary)', marginTop: '4px' }}>Đã chọn: {selectedFile.name}</div>}
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Thư giới thiệu (Cover Letter):</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Giới thiệu ngắn gọn lý do bạn phù hợp với vị trí này..."
-                    value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', resize: 'vertical' }}
-                  ></textarea>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="btn btn-primary"
-                  style={{ width: '100%', padding: '12px' }}
-                >
-                  {uploading ? 'Đang gửi hồ sơ...' : <><Send size={16} /> Gửi hồ sơ ứng tuyển</>}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-
       </div>
     </div>
   );
