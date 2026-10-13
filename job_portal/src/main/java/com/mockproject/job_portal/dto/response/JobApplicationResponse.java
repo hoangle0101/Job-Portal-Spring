@@ -13,6 +13,9 @@ public class JobApplicationResponse {
 
     private Long id;
     private Long jobListingId;
+    private String jobTitle;
+    private Long companyId;
+    private String companyName;
     private Long candidateId;
     private String candidateName;
     private String candidateEmail;
@@ -20,6 +23,7 @@ public class JobApplicationResponse {
     private String resumeUrl;
     private String coverLetter;
     private ApplicationStatus status;
+    private String rejectionReason;
     private LocalDateTime createdAt;
     private InterviewSlotResponse interview;
     private OfferResponse offer;
@@ -34,7 +38,10 @@ public class JobApplicationResponse {
                                               OfferResponse offer) {
         return JobApplicationResponse.builder()
                 .id(application.getId())
-                .jobListingId(application.getJobListingId())
+                .jobListingId(application.getJobListing().getId())
+                .jobTitle(application.getJobListing().getTitle())
+                .companyId(application.getJobListing().getCompany().getId())
+                .companyName(application.getJobListing().getCompany().getName())
                 .candidateId(application.getCandidate() != null ? application.getCandidate().getId() : null)
                 .candidateName(application.getCandidate() != null ? application.getCandidate().getFullName() : null)
                 .candidateEmail(application.getCandidate() != null ? application.getCandidate().getEmail() : null)
@@ -42,6 +49,7 @@ public class JobApplicationResponse {
                 .resumeUrl(application.getResumeUrl())
                 .coverLetter(application.getCoverLetter())
                 .status(application.getStatus())
+                .rejectionReason(application.getRejectionReason())
                 .createdAt(application.getCreatedAt())
                 .interview(interview)
                 .offer(offer)

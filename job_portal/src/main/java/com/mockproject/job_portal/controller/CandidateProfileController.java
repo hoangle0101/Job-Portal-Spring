@@ -2,9 +2,11 @@ package com.mockproject.job_portal.controller;
 
 import com.mockproject.job_portal.dto.request.CandidateProfileRequest;
 import com.mockproject.job_portal.dto.response.ApiResponse;
+import com.mockproject.job_portal.dto.response.CandidateProfileResponse;
+import com.mockproject.job_portal.entity.User;
 import com.mockproject.job_portal.service.CandidateProfileService;
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,22 +20,32 @@ public class CandidateProfileController {
         this.profileService = profileService;
     }
 
-    // Creates or updates a candidate profile.
-    @PostMapping("/profile")
-    public ResponseEntity<ApiResponse<?>> saveProfile(@Valid @RequestBody CandidateProfileRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Candidate profile saved", profileService.saveProfile(request)));
+    // Job seeker: view own profile.
+    @GetMapping("/me/profile")
+    public ResponseEntity<ApiResponse<CandidateProfileResponse>> getMyProfile(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(profileService.getProfile(currentUser.getId())));
     }
 
-    // Gets a candidate profile by its owner's user id.
-    @GetMapping("/profile/{userId}")
-    public ResponseEntity<ApiResponse<?>> getProfile(@PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.success(profileService.getProfile(userId)));
+    // Job seeker: create or update own profile.
+    @PostMapping("/me/profile")
+    public ResponseEntity<ApiResponse<CandidateProfileResponse>> saveMyProfile(@AuthenticationPrincipal User currentUser,
+                                                                               @RequestBody CandidateProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Đã lưu hồ sơ",
+                profileService.saveProfile(currentUser.getId(), request)));
     }
 
-    // Uploads a CV file and associates its URL with the candidate profile.
-    @PostMapping("/upload-cv")
-    public ResponseEntity<ApiResponse<?>> uploadCv(@RequestParam Long userId,
-                                                    @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(ApiResponse.success("CV uploaded", profileService.uploadCv(userId, file)));
+    // Job seeker: upload the default CV.
+    @PostMapping("/me/upload-cv")
+    public ResponseEntity<ApiResponse<CandidateProfileResponse>> uploadCv(@AuthenticationPrincipal User currentUser,
+                                                                          @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.success("Đã tải lên CV",
+                profileService.uploadCv(currentUser.getId(), file)));
+    }
+
+    // Recruiter: view the profile of a candidate who applied to one of their jobs.
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<ApiResponse<CandidateProfileResponse>> getCandidateProfile(@AuthenticationPrincipal User currentUser,
+                                                                                     @PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(profileService.getProfileForRecruiter(userId, currentUser.getId())));
     }
 }

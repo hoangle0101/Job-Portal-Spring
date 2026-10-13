@@ -1,7 +1,7 @@
 package com.mockproject.job_portal.dto.request;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,14 +12,11 @@ import java.time.LocalDate;
 @Setter
 public class CreateOfferRequest {
 
-    @NotNull
-    private Long recruiterId;
-
-    @NotNull
-    @DecimalMin("0.0")
+    @NotNull(message = "Vui lòng nhập mức lương")
+    @Positive(message = "Mức lương phải lớn hơn 0")
     private BigDecimal salary;
 
-    @NotNull
+    @NotNull(message = "Vui lòng chọn ngày bắt đầu làm việc")
     private LocalDate startDate;
 
     private String notes;
