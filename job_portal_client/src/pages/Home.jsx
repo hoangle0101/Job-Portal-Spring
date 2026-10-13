@@ -101,7 +101,7 @@ export default function Home() {
                 style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px' }}
               />
             </div>
-            
+
             <div style={{ height: '32px', width: '1px', background: 'var(--border)' }}></div>
 
             <div ref={cityMenuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '10px', flex: 1, padding: '0 12px' }}>
