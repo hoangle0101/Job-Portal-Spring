@@ -12,19 +12,20 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email là bắt buộc")
+    @Email(message = "Email không đúng định dạng")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "Mật khẩu là bắt buộc")
+    @Size(min = 6, message = "Mật khẩu tối thiểu 6 ký tự")
     private String password;
 
-    @NotBlank(message = "Full name is required")
+    @NotBlank(message = "Họ tên là bắt buộc")
     private String fullName;
 
     private String phone;
 
-    @NotNull(message = "Role is required (RECRUITER or JOB_SEEKER)")
+    // Only RECRUITER or JOB_SEEKER can register; ADMIN is created by DataInitializer.
+    @NotNull(message = "Vui lòng chọn vai trò")
     private Role role;
 }
