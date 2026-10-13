@@ -9,17 +9,22 @@ import lombok.Setter;
 @Setter
 public class UpdateJobListingRequest {
 
-    private Long recruiterId;
     private Long industryId;
     private Long jobTypeId;
 
-    @NotBlank(message = "Job title is required")
+    @NotBlank(message = "Tiêu đề công việc là bắt buộc")
     private String title;
 
     private String salaryRange;
+
+    // OPEN = re-open, CLOSED = stop receiving applications.
     private JobStatus status;
 
+    @NotBlank(message = "Mô tả công việc là bắt buộc")
     private String responsibilities;
+
+    @NotBlank(message = "Yêu cầu ứng viên là bắt buộc")
     private String requirements;
+
     private String benefits;
 }
